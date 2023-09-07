@@ -5,19 +5,12 @@ namespace ProductManager_New.Data;
 
 public class ApplicationContext : DbContext
 {
-    public readonly string connectionString;
-
-    public ApplicationContext(string connectionString)
-    {
-        this.connectionString = connectionString;
-    }
-
+    private string connectionString = "Server=.;Database=ProductManager;Integrated Security=true;Encrypt=False";
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseSqlServer(connectionString);
     }
 
-    public DbSet<Product> Product { get; set;}
-
+    public DbSet<Product> Product { get; set; }
 }
