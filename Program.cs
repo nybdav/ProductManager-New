@@ -9,15 +9,16 @@ class Program
     static string connectionString = "Server=.;Database=ProductManager;Integrated Security=true;Encrypt=False";
 
     static ApplicationContext context = new ApplicationContext(connectionString);
-    
+
     static void Main()
     {
 
-        CursorVisible = false;
         Title = "Product Manager";
+        CursorVisible = false;
 
         while (true)
         {
+
             WriteLine("1. Ny Produkt");
             WriteLine("2. Sök Produkt");
             WriteLine("3. Avsluta");
@@ -56,49 +57,83 @@ class Program
 
     private static void ShowAddNewProductView()
     {
-        CursorVisible = true;
+        string name, sku, description, imageUrl, price;
+        bool productExists;
 
-        Write("Namn: ");
-
-        string name = ReadLine();
-
-        Write("SKU: ");
-
-        string sku = ReadLine();
-
-        Write("Beskrivning: ");
-
-        string description = ReadLine();
-
-        Write("Bild (URL): ");
-
-        string imageUrl = ReadLine();
-
-        Write("Pris: ");
-
-        string price = ReadLine();
-
-        var product = new Product(
-            name,
-            sku,
-            description,
-            imageUrl,
-            price);
-
-        Clear();
-
-        try
+        do
         {
-            SaveProduct(product);
+            Clear();
+            productExists = false; // Initialize the productExists flag
 
-            WriteLine("Produkt sparad");
-        }
-        catch
-        {
-            WriteLine("Produkt finns redan registrerad");
-        }
+            Write("Namn: ");
+            name = ReadLine();
 
-        Thread.Sleep(2000);
+            Write("SKU: ");
+            sku = ReadLine();
+
+            Write("Beskrivning: ");
+            description = ReadLine();
+
+            Write("Bild (URL): ");
+            imageUrl = ReadLine();
+
+            Write("Pris: ");
+            price = ReadLine();
+
+            var product = new Product(
+                name,
+                sku,
+                description,
+                imageUrl,
+                price);
+
+            WriteLine(); // Add a line break for spacing
+
+            WriteLine("Är detta korrekt? (J)a (N)ej");
+
+            CursorVisible = false;
+
+            var keyInfo = ReadKey(intercept: true); // Read a single key without echoing
+
+            if (keyInfo.Key == ConsoleKey.J)
+            {
+                try
+                {
+                    // Check if the product already exists before adding it
+                    if (ProductExists(sku))
+                    {
+                        productExists = true;
+                        WriteLine("Produkt finns redan registrerad");
+                        Thread.Sleep(2000);
+                    }
+                    else
+                    {
+                        AddProductToDatabase(product);
+                        Clear();
+                        WriteLine("Produkt sparad");
+                        Thread.Sleep(2000);
+                        break; // Exit the loop and return to Main
+                    }
+                }
+                catch (Exception ex)
+                {
+                    WriteLine($"Fel vid sparande av produkt: {ex.Message}");
+                    Thread.Sleep(2000);
+                }
+            }
+            else if (keyInfo.Key == ConsoleKey.N)
+            {
+                // Continue the loop to re-enter product details
+            }
+
+        } while (true && !productExists); // Continue only if the product doesn't exist
+    }
+
+    private static bool ProductExists(string sku)
+    {
+        // Check if the product already exists in the database
+        // Return true if it exists, false otherwise
+        return GetProduct(sku) != null;
     }
 
     private static void ShowSearchProductView()
@@ -113,68 +148,70 @@ class Program
 
         if (product != null)
         {
-            WriteLine($"Namn : {product.Name}");
-            WriteLine($"SKU : {product.SKU}");
-            WriteLine($"Beskrivning : {product.Description}");
-            WriteLine($"Bild (URL) : {product.ImageURL}");
-            WriteLine($"Pris : {product.Price}");
+            while (true)
+            {
+                WriteLine($"Namn : {product.Name}");
+                WriteLine($"SKU : {product.SKU}");
+                WriteLine($"Beskrivning : {product.Description}");
+                WriteLine($"Bild (URL) : {product.ImageURL}");
+                WriteLine($"Pris : {product.Price}");
 
-            while (ReadKey(true).Key != ConsoleKey.Escape);
+                CursorVisible = false;
+
+                WriteLine();
+                WriteLine("(R)adera");
+
+                var key = ReadKey(true).Key;
+                if (key == ConsoleKey.R)
+                {
+                    WriteLine();
+                    WriteLine("Radera Produkt? (J)a (N)ej");
+                    key = ReadKey(true).Key;
+                    if (key == ConsoleKey.J)
+                    {
+                        // Delete the product from the database
+                        Clear();
+                        DeleteProductFromDatabase(product);
+                        WriteLine("Produkt raderad");
+                        Thread.Sleep(2000);
+                        return; // Exit the method after deletion
+                    }
+                    else if (key == ConsoleKey.N)
+                    {
+                        Clear();
+                        // Continue to run the loop to view product details
+                    }
+                }
+                else if (key == ConsoleKey.Escape)
+                {
+                    break;
+                }
+            }
         }
         else
         {
             WriteLine("Produkt finns ej");
-
             Thread.Sleep(2000);
         }
     }
 
-    private static void ShowListProductsView()
+    private static void DeleteProductFromDatabase(Product? product)
     {
-        Write("SKU: ");
+        context.Product.Remove(product);
 
-        string sku = ReadLine();
-
-        var registeredProducts = GetProductsBySKU(sku);
-
-        foreach ( var product in registeredProducts )
-        {
-            WriteLine(
-                $"{product.Name}" +
-                $"{product.SKU}" +
-                $"{product.Description}" +
-                $"{product.ImageURL}" +
-                $"{product.Price}");
-        }
-
-        while (ReadKey(true).Key != ConsoleKey.Escape) ;    
+        context.SaveChanges();
     }
-
-    private static IEnumerable<Product> GetProductsBySKU(string sku)
-        => context.Product.Where(x => x.SKU == sku);
-
 
     private static Product? GetProduct(string sku)
         => context.Product.FirstOrDefault(x => x.SKU == sku);
-    
 
-    private static void SaveProduct(Product product)
+    private static void AddProductToDatabase(Product product)
     {
         context.Product.Add(product);
 
         context.SaveChanges();
     }
-
-    private static void WaitUntil(ConsoleKey escape)
-    {
-        while (ReadKey(true).Key != ConsoleKey.Escape) ;
-    }
 }
-
-
-
-
-
 
 
 

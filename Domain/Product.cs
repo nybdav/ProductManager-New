@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 
 namespace ProductManager_New.Domain
 {
