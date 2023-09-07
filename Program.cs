@@ -48,7 +48,7 @@ class Program
 
                     return;
             }
-
+            
             Clear();
         }
     }
@@ -88,8 +88,6 @@ class Program
             WriteLine(); // Add a line break for spacing
 
             WriteLine("Är detta korrekt? (J)a (N)ej");
-
-            CursorVisible = false;
 
             var keyInfo = ReadKey(intercept: true); // Read a single key without echoing
 
@@ -168,6 +166,7 @@ class Program
                     if (key == ConsoleKey.J)
                     {
                         // Delete the product from the database
+                        
                         Clear();
                         DeleteProductFromDatabase(product);
                         WriteLine("Produkt raderad");
@@ -210,7 +209,3 @@ class Program
         context.SaveChanges();
     }
 }
-
-
-
-
