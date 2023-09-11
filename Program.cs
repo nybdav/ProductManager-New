@@ -48,7 +48,7 @@ class Program
 
                     return;
             }
-            
+
             Clear();
         }
     }
@@ -56,34 +56,29 @@ class Program
     private static void ShowAddNewProductView()
     {
         string name, sku, description, imageUrl, price;
-        bool productExists;
 
         do
         {
             Clear();
-            productExists = false; // Initialize the productExists flag
 
             Write("Namn: ");
             name = ReadLine();
 
+
             Write("SKU: ");
             sku = ReadLine();
+
 
             Write("Beskrivning: ");
             description = ReadLine();
 
+
             Write("Bild (URL): ");
             imageUrl = ReadLine();
 
+
             Write("Pris: ");
             price = ReadLine();
-
-            var product = new Product(
-                name,
-                sku,
-                description,
-                imageUrl,
-                price);
 
             WriteLine(); // Add a line break for spacing
 
@@ -95,35 +90,40 @@ class Program
             {
                 try
                 {
-                    // Check if the product already exists before adding it
+                    var product = new Product(name, sku, description, imageUrl, price);
+
                     if (ProductExists(sku))
                     {
-                        productExists = true;
                         WriteLine("Produkt finns redan registrerad");
+
                         Thread.Sleep(2000);
                     }
                     else
                     {
                         AddProductToDatabase(product);
+
                         Clear();
                         WriteLine("Produkt sparad");
+
                         Thread.Sleep(2000);
                         break; // Exit the loop and return to Main
                     }
                 }
-                catch (Exception ex)
+                catch (ArgumentException ex)
                 {
-                    WriteLine($"Fel vid sparande av produkt: {ex.Message}");
-                    Thread.Sleep(2000);
+                    WriteLine($"Error on input: {ex.Message}");
+                    Thread.Sleep(7000);
                 }
+
             }
             else if (keyInfo.Key == ConsoleKey.N)
             {
                 // Continue the loop to re-enter product details
             }
 
-        } while (true && !productExists); // Continue only if the product doesn't exist
+        } while (true);
     }
+
 
     private static bool ProductExists(string sku)
     {
@@ -166,7 +166,7 @@ class Program
                     if (key == ConsoleKey.J)
                     {
                         // Delete the product from the database
-                        
+
                         Clear();
                         DeleteProductFromDatabase(product);
                         WriteLine("Produkt raderad");
