@@ -30,14 +30,14 @@ class Program
                 case ConsoleKey.D1:
                 case ConsoleKey.NumPad1:
 
-                    ShowAddNewProductView();
+                    AddNewProductView();
 
                     break;
 
                 case ConsoleKey.D2:
                 case ConsoleKey.NumPad2:
 
-                    ShowSearchProductView();
+                    SearchProductView();
 
                     break;
 
@@ -53,7 +53,7 @@ class Program
         }
     }
 
-    private static void ShowAddNewProductView()
+    private static void AddNewProductView()
     {
         string name, sku, description, imageUrl, price;
 
@@ -132,7 +132,7 @@ class Program
         return GetProduct(sku) != null;
     }
 
-    private static void ShowSearchProductView()
+    private static void SearchProductView()
     {
         Write("SKU: ");
 
@@ -204,6 +204,10 @@ class Program
 
     private static void AddProductToDatabase(Product product)
     {
+        // using var context = new ApplicationContext;
+        // går även lägga här för att inte hålla på datan
+        // från databasen efter att metoden körts.
+
         context.Product.Add(product);
 
         context.SaveChanges();
