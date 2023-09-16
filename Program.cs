@@ -6,8 +6,6 @@ namespace ProductManager;
 
 class Program
 {
-    static ApplicationContext context = new ApplicationContext();
-
     static void Main()
     {
 
@@ -124,7 +122,6 @@ class Program
         } while (true);
     }
 
-
     private static bool ProductExists(string sku)
     {
         // Check if the product already exists in the database
@@ -194,19 +191,23 @@ class Program
 
     private static void DeleteProductFromDatabase(Product? product)
     {
+        using var context = new ApplicationContext();
+
         context.Product.Remove(product);
 
         context.SaveChanges();
     }
 
-    private static Product? GetProduct(string sku)
-        => context.Product.FirstOrDefault(x => x.SKU == sku);
+    private static Product? GetProduct(string sku) { 
+        
+        using var context = new ApplicationContext();
+
+        return context.Product.FirstOrDefault(x => x.SKU == sku);
+    }
 
     private static void AddProductToDatabase(Product product)
     {
-        // using var context = new ApplicationContext;
-        // går även lägga här för att inte hålla på datan
-        // från databasen efter att metoden körts.
+        using var context = new ApplicationContext();
 
         context.Product.Add(product);
 
