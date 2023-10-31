@@ -1,11 +1,18 @@
-﻿using ProductManager_New.Data;
-using ProductManager_New.Domain;
+﻿using ProductManager_New.Domain;
+using ProductManager_New.DTO;
+using System.Text;
+using System.Text.Json;
 using static System.Console;
 
 namespace ProductManager;
 
 class Program
 {
+    static readonly HttpClient httpClient = new()
+    {
+        BaseAddress = new Uri("https://localhost:8000/")
+    };
+
     static void Main()
     {
 
@@ -53,42 +60,44 @@ class Program
 
     private static void AddNewProductView()
     {
-        string name, sku, description, imageUrl, price;
 
         do
         {
             Clear();
 
             Write("Namn: ");
-            name = ReadLine();
+            string productName = ReadLine();
 
 
             Write("SKU: ");
-            sku = ReadLine();
+            string sku = ReadLine();
 
 
             Write("Beskrivning: ");
-            description = ReadLine();
+            string productDescription = ReadLine();
 
 
             Write("Bild (URL): ");
-            imageUrl = ReadLine();
+            string imageUrl = ReadLine();
 
 
             Write("Pris: ");
-            price = ReadLine();
+            string price = ReadLine();
 
+            
             WriteLine(); // Add a line break for spacing
+
 
             WriteLine("Är detta korrekt? (J)a (N)ej");
 
-            var keyInfo = ReadKey(intercept: true); // Read a single key without echoing
+
+            var keyInfo = ReadKey(true);
 
             if (keyInfo.Key == ConsoleKey.J)
             {
                 try
                 {
-                    var product = new Product(name, sku, description, imageUrl, price);
+                    var product = new Product(productName, sku, productDescription, imageUrl, price);
 
                     if (ProductExists(sku))
                     {
@@ -98,9 +107,10 @@ class Program
                     }
                     else
                     {
-                        AddProductToDatabase(product);
+                        SaveProduct(product);
 
                         Clear();
+
                         WriteLine("Produkt sparad");
 
                         Thread.Sleep(2000);
@@ -109,7 +119,7 @@ class Program
                 }
                 catch (ArgumentException ex)
                 {
-                    WriteLine($"Error on input: {ex.Message}");
+                    WriteLine($"Ogiltig information: {ex.Message}");
                     Thread.Sleep(7000);
                 }
 
@@ -143,10 +153,10 @@ class Program
         {
             while (true)
             {
-                WriteLine($"Namn : {product.Name}");
+                WriteLine($"Namn : {product.ProductName}");
                 WriteLine($"SKU : {product.SKU}");
-                WriteLine($"Beskrivning : {product.Description}");
-                WriteLine($"Bild (URL) : {product.ImageURL}");
+                WriteLine($"Beskrivning : {product.ProductDescription}");
+                WriteLine($"Bild (URL) : {product.ImageUrl}");
                 WriteLine($"Pris : {product.Price}");
 
                 CursorVisible = false;
@@ -162,13 +172,20 @@ class Program
                     key = ReadKey(true).Key;
                     if (key == ConsoleKey.J)
                     {
-                        // Delete the product from the database
-
+                        
+                        // Radera produkt från databas via API:et
                         Clear();
-                        DeleteProductFromDatabase(product);
-                        WriteLine("Produkt raderad");
+                        bool deleted = DeleteProduct(sku);
+                        if (deleted)
+                        {
+                            WriteLine("Produkt raderad");
+                        }
+                        else
+                        {
+                            WriteLine("Misslyckades med att radera produkten.");
+                        }
                         Thread.Sleep(2000);
-                        return; // Exit the method after deletion
+                        return; // Avsluta metod efter radering
                     }
                     else if (key == ConsoleKey.N)
                     {
@@ -184,33 +201,90 @@ class Program
         }
         else
         {
-            WriteLine("Produkt finns ej");
+            WriteLine("Produkt saknas");
             Thread.Sleep(2000);
         }
     }
 
-    private static void DeleteProductFromDatabase(Product? product)
+    // HTTP DELETE - https://localhost:8000/products/{sku}
+    private static bool DeleteProduct(string sku)
     {
-        using var context = new ApplicationContext();
+        var response = httpClient.DeleteAsync($"products/{sku}").Result;
 
-        context.Product.Remove(product);
-
-        context.SaveChanges();
+        if (response.IsSuccessStatusCode)
+        {
+            return true;
+        }
+        else
+        {
+            WriteLine("Misslyckades med att radera produkt.");
+            return false;
+        }
+     
     }
 
-    private static Product? GetProduct(string sku) { 
-        
-        using var context = new ApplicationContext();
+    // HTTP GET - https://localhost:8000/products/{sku}
+    private static Product? GetProduct(string sku)
+    {
 
-        return context.Product.FirstOrDefault(x => x.SKU == sku);
+        string apiUrl = $"products/{sku}";
+
+        var response = httpClient.GetAsync(apiUrl).Result;
+
+        if (response.IsSuccessStatusCode)
+        {
+            var json = response.Content.ReadAsStringAsync().Result;
+
+            var serializeOptions = new JsonSerializerOptions
+
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+
+            var productDto = JsonSerializer.Deserialize<ProductDTO>(json, serializeOptions);
+
+            if (productDto != null)
+            {
+                var product = new Product
+                {
+                    Id = productDto.Id,
+                    ProductName = productDto.ProductName,
+                    SKU = productDto.SKU,
+                    ProductDescription = productDto.ProductDescription,
+                    ImageUrl = productDto.ImageURL,
+                    Price = productDto.Price
+                };
+
+                return product;
+            }
+        }
+
+        return null;
     }
 
-    private static void AddProductToDatabase(Product product)
+    // HTTP POST - https://localhost:8000/products
+    private static void SaveProduct(Product product)
     {
-        using var context = new ApplicationContext();
+        var createVehicleRequest = new CreateProductRequest
+        {
+            ProductName = product.ProductName,
+            SKU = product.SKU,
+            ProductDescription = product.ProductDescription,
+            ImageURL = product.ImageUrl,
+            Price = product.Price,
+        };
 
-        context.Product.Add(product);
+        var json = JsonSerializer.Serialize(createVehicleRequest);
 
-        context.SaveChanges();
+        var body = new StringContent(
+            json,
+            Encoding.UTF8,
+            "application/json");
+
+        var response = httpClient.PostAsync("products", body).Result;
+
+
+        // Kasta exception om statuskoden inte ligger inom 2xx-omfånget.
+        response.EnsureSuccessStatusCode();
     }
 }

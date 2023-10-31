@@ -8,16 +8,16 @@ namespace ProductManager_New.Domain
         public int Id { get; set; }
 
         [MaxLength(50)]
-        public string Name { get; set; }
+        public string ProductName { get; set; }
 
         [MaxLength(25)]
         public string SKU { get; set; }
 
         [MaxLength(100)]
-        public string Description { get; set; }
+        public string ProductDescription { get; set; }
 
         [MaxLength(100)]
-        public string ImageURL { get; set; }
+        public string ImageUrl { get; set; }
 
         [MaxLength(10)]
         public string Price { get; set; }
@@ -26,19 +26,19 @@ namespace ProductManager_New.Domain
         {
         }
 
-        public Product(string name, string sku, string description, string imageUrl, string price)
+        public Product(string productName, string sku, string productDescription, string imageUrl, string price)
         {
             // Guard cluases för att användaren
-            // inte skall kunna lämna tomma fält vid registrering:
+            // inte skall kunna lämna tomma strängar eller white-space vid registrering:
 
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Name cannot be empty or null.", nameof(name));
+            if (string.IsNullOrWhiteSpace(productName))
+                throw new ArgumentException("Name cannot be empty or null.", nameof(productName));
 
             if (string.IsNullOrWhiteSpace(sku))
                 throw new ArgumentException("SKU cannot be empty or null.", nameof(sku));
 
-            if (string.IsNullOrWhiteSpace(description))
-                throw new ArgumentException("Description cannot be empty or null.", nameof(description));
+            if (string.IsNullOrWhiteSpace(productDescription))
+                throw new ArgumentException("Description cannot be empty or null.", nameof(productDescription));
 
             if (string.IsNullOrWhiteSpace(imageUrl))
                 throw new ArgumentException("ImageURL cannot be empty or null.", nameof(imageUrl));
@@ -46,10 +46,10 @@ namespace ProductManager_New.Domain
             if (string.IsNullOrWhiteSpace(price))
                 throw new ArgumentException("Price cannot be empty or null.", nameof(price));
 
-            Name = name;
+            ProductName = productName;
             SKU = sku;
-            Description = description;
-            ImageURL = imageUrl;
+            ProductDescription = productDescription;
+            ImageUrl = imageUrl;
             Price = price;
         }
     }
